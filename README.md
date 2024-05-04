@@ -60,17 +60,17 @@ The above is an example of making a blank workingMemory variable that analyzes t
 
 # ABILITIES & TOOLS
 
-- Ghost thinks about what you said before doing anything else. This helps him manage his own actions more efficiently
+- Ghost first thinks about what you said before doing anything else. This helps him manage his own actions more efficiently
+
+- Scratchpad sub-process to write whatever notes he wants for future interactions
+
+- Summary sub-process to condense short term history every 5 interactions
 
 - Can pick tools to use, such as
 -> Calendar tool, which is linked with Todoist API that acts as calendar.
-(I personally don't even look at my calendar, so I'm thinking it might be easier to make a text based calendar app specifically for AI souls to interact with. Can act as reminders and just be more flexible.)
 
-He thinks before every interaction if a tool is neede & which, then picks a tool
-
-Every tool is handled in its own mental process as it requires a helper app to send/receieve data from external API calls and the mix. Having each tool be its own mental process is easier to handle.
-
-- Scratchpad to write whatever notes he wants for future interactions
+Every tool is handled in its own mental process as it requires a helper app to send/receieve data from external API calls and the mix. 
+Having each tool be its own mental process is easier to handle.
 
 # TO RUN
 The soul runs 24/7 on Open Soul's server side when it's up, just make sure to have the helper app on or he will get stuck on mental processes when he switches. 
@@ -79,5 +79,5 @@ The soul runs 24/7 on Open Soul's server side when it's up, just make sure to ha
 
 (I think to combat bugs here, can have it so every non-core mental process has a countdown where, if there is no response from a client after X time, send him back to the core mental process)
 
-Made with Open Souls 
+## Made with Open Souls 
 https://docs.souls.chat/
