@@ -81,3 +81,5 @@ The soul runs 24/7 on Open Soul's server side when it's up, just make sure to ha
 
 ## Made with Open Souls 
 https://docs.souls.chat/
+
+![image](https://github.com/kingbootoshi/ghost/assets/127834715/8224318e-3652-4195-b8b5-454d2d4cde4e)
