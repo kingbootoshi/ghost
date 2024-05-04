@@ -1,5 +1,4 @@
 # GHOST 👻
-==========
 
 GHOST is the ultimate, all in one AI soul that acts as the ultimate personal assistant.
 
