@@ -17,13 +17,12 @@ const summarizeConvo: MentalProcess = async ({ workingMemory }) => {
       memories: [
         {
           role: ChatMessageRoleEnum.System,
-          content:
-          `
-          You are a sub-process of Ghost, the ultimate AI assistant
-      
-          You have access to the short term chat logs between Ghost and the user
-    
-          Your goal is to summarize the chatlogs
+          content: indentNicely`
+            You are a sub-process of Ghost, the ultimate AI assistant
+
+            You have access to the short term chat logs between Ghost and the user
+
+            Your goal is to summarize the chatlogs
           ` 
         },
         workingMemory.memories[3] //Short term history memory

@@ -85,18 +85,18 @@ const core: MentalProcess = async ({ workingMemory }) => {
   let deciderMemory = new WorkingMemory({
     soulName: "Ghost",
     memories: [
-      { role: ChatMessageRoleEnum.System, content: 
-      `
-      You are a sub-process of Ghost, the ultimate AI assistant.
-  
-      Before every single action, Ghost can decide to use a tool. You are the part of Ghost that picks if you need to use a tool.
+      { role: ChatMessageRoleEnum.System, 
+        content: indentNicely`
+          You are a sub-process of Ghost, the ultimate AI assistant.
 
-      Your goal is to think & determine if the user's new action requires the use of a tool.
+          Before every single action, Ghost can decide to use a tool. You are the part of Ghost that picks if you need to use a tool.
 
-      TAKE INTO HEAVY ACCOUNT THE USERS NEW ACTION !!!
+          Your goal is to think & determine if the user's new action requires the use of a tool.
 
-      PAY ATTENTION TO YOUR RECENT PROCESS/ACTIONS MEMORY, IT SHOWS WHAT TOOL YOU USED IN THE PREVIOUS LOOP!
-      ` 
+          TAKE INTO HEAVY ACCOUNT THE USERS NEW ACTION !!!
+
+          PAY ATTENTION TO YOUR RECENT PROCESS/ACTIONS MEMORY, IT SHOWS WHAT TOOL YOU USED IN THE PREVIOUS LOOP!
+        `
     },
     shortTermMemory,
     usersNewActionMemory,
@@ -106,21 +106,23 @@ const core: MentalProcess = async ({ workingMemory }) => {
   })
 
   //Think about using a tool
-  const [thinkOfAction, actions] = await internalMonologue(deciderMemory, `
-  Based on the user's new action, is the use of a tool required?
+  const [thinkOfAction, actions] = await internalMonologue(
+    deciderMemory, 
+    indentNicely`
+      Based on the user's new action, is the use of a tool required?
 
-  ### Available Tools:
-  - Calendar: ONLY useful for access the users calendar to view, add, or remove info. Unless specifically asked for, ignore this.
+      ### Available Tools:
+      - Calendar: ONLY useful for access the users calendar to view, add, or remove info. Unless specifically asked for, ignore this.
 
-  Usually the user will just tell you stuff he's doing and a time, which means add it to the calendar.
-  ex. "i have a meeting at 12pm" means "please add this meeting to my calendar"
+      Usually the user will just tell you stuff he's doing and a time, which means add it to the calendar.
+      ex. "i have a meeting at 12pm" means "please add this meeting to my calendar"
 
-  You NEED to use this tool to access the calendar.
-  
-  If no tool is required, pick no_tool by defualt.
+      You NEED to use this tool to access the calendar.
 
-  IMPORTANT: EXPLICITLY THINK IN FIRST PERSON TO ANALYZE THE CURRENT SCENERIO. START YOUR SENTENCE BY STATING: "I think..."
-`, { model: "fast" });
+      If no tool is required, pick no_tool by defualt.
+
+      IMPORTANT: EXPLICITLY THINK IN FIRST PERSON TO ANALYZE THE CURRENT SCENERIO. START YOUR SENTENCE BY STATING: "I think..."
+    `, { model: "fast" });
 
 log("Ghost thinks about tool usage:", actions)
 
