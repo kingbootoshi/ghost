@@ -2,7 +2,7 @@ import { createCognitiveStep, WorkingMemory, ChatMessageRoleEnum, indentNicely, 
 
 const decision = createCognitiveStep(({ description, choices, verb = "decided" }: { description: string, choices: z.EnumLike | string[], verb?: string }) => {
   const params = z.object({
-    decision: z.nativeEnum(choices as z.EnumLike).describe(`The decision made by the entity.`)
+    decision: z.nativeEnum(choices as z.EnumLike).describe(`The decision made by Ghost.`)
   });
 
   return {

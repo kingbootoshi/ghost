@@ -1,32 +1,37 @@
 
-import { MentalProcess, useActions, useSoulMemory, ChatMessageRoleEnum, WorkingMemory, indentNicely } from "@opensouls/engine";
+import { MentalProcess, useActions, useSoulMemory, ChatMessageRoleEnum, WorkingMemory, indentNicely, z, usePerceptions } from "@opensouls/engine";
 import externalDialog from "./cognitiveSteps/externalDialog.js";
 import internalMonologue from "./cognitiveSteps/internalMonologue.js";
 import decision from "./cognitiveSteps/decision.js";
 import calendarTool from "./mentalProcesses/calendarTool.js";
+import { getCurrentTimeString } from "./lib/utils/time.js";
 
 const core: MentalProcess = async ({ workingMemory }) => {
   const { speak, log  } = useActions()
+  const { invokingPerception, pendingPerceptions } = usePerceptions();
   const newUserAction = useSoulMemory<string>("newUserAction", "...");
+  const userSaid = useSoulMemory<string>("userSaid", "...");
   const lastProcess = useSoulMemory("lastProcess", "core");
+  const toolThoughtMemory = useSoulMemory("toolThoughtMemory", "...");
   const scratchpadNotes = useSoulMemory<string>("scratchpadNotes", "Empty scratchpad");
   const lastToolResult = useSoulMemory<string>("lastToolResult", "...");
   const shortTermChatLogs = useSoulMemory<string[]>("shortTermChatLogs", []);
   const longtermHistory = useSoulMemory<string[]>("longtermHistory", []);
   const shortTermHistoryString = shortTermChatLogs.current.map((item, index) => `${index + 1}. ${item}`).join("\n\n")
   const longTermHistoryString = longtermHistory.current.slice().reverse().slice(-10).reverse().filter(narrative => narrative != null).map(narrative => narrative.trim()) .join("\n\n"); 
-
-  lastProcess.current = "core"
+  const nextReengagementAt = useSoulMemory<string | null>("nextReengagementAt");
+  const currentTimeString = getCurrentTimeString();
+  let usersNewActionMemory;
+  
   // SETTING UP WORKING MEMORY TEMPLATE FOR EASY MANIPULATION
-
   //Recent Process Memory
   let recentProcessMemory = {
     role: ChatMessageRoleEnum.Assistant, 
-    content: `## RECENT PROCESS/ACTIONS\n\n${lastToolResult.current}`,
+    content: `## CURRENT TIME\n ${currentTimeString}\n\n## MEMORY UPDATE: RECENT PROCESS/ACTIONS\n\n<SYSTEM>\n${lastToolResult.current}\n</SYSTEM>`,
   };
 
   //Wiping tool memory after adding the last one to memory to ensure freshness
-  lastToolResult.current = ""
+  lastToolResult.current = "NO NEW MEMORY UPDATES."
 
   //Long Term Narrative Memory
   let longTermMemory = {
@@ -37,7 +42,7 @@ const core: MentalProcess = async ({ workingMemory }) => {
   //Short Term Chat Memory
   let shortTermMemory = {
     role: ChatMessageRoleEnum.Assistant, 
-    content: `## SHORT TERM CHAT LOGS\n\n${shortTermHistoryString}`,
+    content: `## SHORT TERM CHAT HISTORY\n\n${shortTermHistoryString}`,
   };
 
   //Scratchpad Memory
@@ -46,85 +51,76 @@ const core: MentalProcess = async ({ workingMemory }) => {
     content: `## GHOST'S SCRATCHPAD NOTES\n${scratchpadNotes.current}`,
   };
 
-  // User's New Action Memory
-  let usersNewActionMemory = {
-    role: ChatMessageRoleEnum.Assistant, 
-    content: `## USER'S NEW ACTION\n${newUserAction.current}`,
+  if (lastProcess.current === "core"){
+    // User's New Action Memory
+    usersNewActionMemory = {
+      role: ChatMessageRoleEnum.Assistant, 
+      content: `${newUserAction.current}`,
+    };
+  } else {
+    // User's New Action Memory
+    usersNewActionMemory = {
+      role: ChatMessageRoleEnum.Assistant, 
+      content: `## PREVIOUS PERCEPTION THAT ACTIVATED ${lastProcess.current} MENTAL PROCESS:\n${newUserAction.current}\n\nNOTE: You JUST came back from the ${lastProcess.current} mental process. Proceed forward`,
+    };
   };
+
+  lastProcess.current = "core";
 
   //THE CORE, MASTER TEMPLATE OF GHOST'S WORKING MEMORY
   let masterMemory = new WorkingMemory({
     soulName: "Ghost",
     memories: [
       workingMemory.memories[0], //[0] IS THE BASE PROMPT FROM GHOST.MD
-      recentProcessMemory, //[1] IS WHAT WE ADD WHEN COMING BACK FROM OTHER MENTAL PROCESSES TO INFORM GHOST OF ACTIONS HES DONE IN DIFFERENT BRAINS
+      scratchpadMemory, //[1] IS GHOST'S SCRATCHPAD NOTES
       longTermMemory, //[2] IS THE LONG TERM CHAT HISTORY SUMMED UP
       shortTermMemory, //[3] IS THE SHORT TERM CHAT LOGS
-      scratchpadMemory,//[4] IS GHOST'S SCRATCHPAD NOTES
+      recentProcessMemory, //[4] IS WHAT WE ADD WHEN COMING BACK FROM OTHER MENTAL PROCESSES TO INFORM GHOST OF ACTIONS HES DONE IN DIFFERENT BRAINS
       usersNewActionMemory //[5] IS THE USERS'S NEW ACTION
     ]
   })
 
+  //RESPONDING TO THE USER LOGIC WITH "SAID" PERCEPTION
+  if(invokingPerception?.action === "said"){
+  //FEEL LOGIC
+  const [withFeelings, feelings] = await internalMonologue(
+    masterMemory,
+    { instructions: "WHAT FEELING HAS INVOKED IN GHOST IN ONE WORD? GHOST FEELS:", verb: "feels" },
+    { model: "fast" }
+  );
+
+  log("Ghost feels...", feelings)
+
   //THINK LOGIC
   const [withThoughts, thought] = await internalMonologue(
-    masterMemory,
-    "Think before you speak",
-    {model: "fast" }
+    withFeelings,
+    { instructions: "Formulate a thought before speaking", verb: "thinks" },
+    { model: "exp/llama-v3-70b-instruct" }
   );
 
   log("Ghost thinks...", thought)
 
-  // User's New Action Memory
-  let thoughtMemory = {
-    role: ChatMessageRoleEnum.Assistant, 
-    content: `## GHOST MAIN BRAIN THINKS\n${thought}`,
-  };
-
   // SELECT TOOL USE LOGIC
-  //Creating a sub-agent that decides if Ghost needs to use a tool
-  let deciderMemory = new WorkingMemory({
-    soulName: "Ghost",
-    memories: [
-      { role: ChatMessageRoleEnum.System, 
-        content: indentNicely`
-          You are a sub-process of Ghost, the ultimate AI assistant.
-
-          Before every single action, Ghost can decide to use a tool. You are the part of Ghost that picks if you need to use a tool.
-
-          Your goal is to think & determine if the user's new action requires the use of a tool.
-
-          TAKE INTO HEAVY ACCOUNT THE USERS NEW ACTION !!!
-
-          PAY ATTENTION TO YOUR RECENT PROCESS/ACTIONS MEMORY, IT SHOWS WHAT TOOL YOU USED IN THE PREVIOUS LOOP!
-        `
-    },
-    shortTermMemory,
-    usersNewActionMemory,
-    thoughtMemory,
-    recentProcessMemory,
-    ]
-  })
-
   //Think about using a tool
   const [thinkOfAction, actions] = await internalMonologue(
-    deciderMemory, 
+    withThoughts, 
     indentNicely`
       Based on the user's new action, is the use of a tool required?
 
+      PAY HEAVY ATTENTION TO ANY MEMORY UPDATES! 
+
       ### Available Tools:
-      - Calendar: ONLY useful for access the users calendar to view, add, or remove info. Unless specifically asked for, ignore this.
-
-      Usually the user will just tell you stuff he's doing and a time, which means add it to the calendar.
-      ex. "i have a meeting at 12pm" means "please add this meeting to my calendar"
-
-      You NEED to use this tool to access the calendar.
-
+      - Calendar: Access user's calendar to view, add, or remove events. Use when user mentions an event or time. 
+      Example: "I have a meeting at 12pm" -> add meeting to calendar
+      
       If no tool is required, pick no_tool by defualt.
 
       IMPORTANT: EXPLICITLY THINK IN FIRST PERSON TO ANALYZE THE CURRENT SCENERIO. START YOUR SENTENCE BY STATING: "I think..."
-    `, { model: "fast" });
+    `, { model: "exp/llama-v3-70b-instruct" });
 
-log("Ghost thinks about tool usage:", actions)
+  log("Ghost thinks about tool usage:", actions)
+
+  toolThoughtMemory.current = actions
 
   //Pick the tool
   const [useAction, action] = await decision(thinkOfAction, {
@@ -152,17 +148,34 @@ log("Ghost thinks about tool usage:", actions)
   // CHAT LOGIC
   const [withDialog, result] = await externalDialog(
     withThoughts,
-    "Say whatever you want",
-    {model: "quality" }
+    "Interact with the user",
+    {model: "gpt-4o" }
   );
 
   speak(result);
 
   //PUSH CONVO TO SHORT TERM HISTORY
-  //Pushing the player's current action & GM's narrative to the short term memory
-  shortTermChatLogs.current.push(`//USER INTERACTION\n${newUserAction.current}\n\n//GHOST REPLIED:\n${result}`);
+  shortTermChatLogs.current.push(`//USER SAID\n${userSaid.current}\n\n//GHOST REPLIED:\n${result}`);
 
-  return masterMemory;
+  return withDialog;
+  }
+
+  //RESPONDING TO THE USER wITH CURRENT WORKING MEMORY WHICH CONTAINS NEW PERCEPTION MEMORIES THAT ARE NOT "SAID"
+  if(invokingPerception?.action === "remind"){
+    const reminder = invokingPerception?.content
+    const [withDialog, result] = await externalDialog(
+      workingMemory,
+      indentNicely`# [SYSTEM]: REMINDER PING RECEIVED!\n ${reminder},\n PLEASE SPEAK TO REMIND THE USER!`,
+      {model: "gpt-4o" }
+    );
+
+    speak(result)
+
+    //PUSH CONVO TO SHORT TERM HISTORY
+    shortTermChatLogs.current.push(`//USER INTERACTION\n[ N/A ]\n\n//GHOST SAID:\n${result}`);
+
+    return workingMemory
+  }
 }
 
 export default core

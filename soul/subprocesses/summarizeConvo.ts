@@ -8,8 +8,8 @@ const summarizeConvo: MentalProcess = async ({ workingMemory }) => {
   const longtermHistory = useSoulMemory<string[]>("longtermHistory", []);
 
   // Check if tempHistory has 5 narratives saved to summarize
-  if (shortTermChatLogs.current.length >= 5) {
-    log("Reached more than 5 objects in the short term chat logs. Summarizing...")
+  if (shortTermChatLogs.current.length >= 10) {
+    log("Reached more than 10 objects in the short term chat logs. Summarizing...")
 
     //Creating a sub-ai agent to summarize the narrative
     const cleanMemory = new WorkingMemory({
@@ -31,8 +31,8 @@ const summarizeConvo: MentalProcess = async ({ workingMemory }) => {
 
     const [withSummedChat, summmedChat] = await internalMonologue(
       cleanMemory, 
-      "Summarize the short term chat logs into a very concise, brief summary that contains the most important information", 
-      { model: "fast" }
+      "Summarize the last 10 chats from the short term chat logs into a brief summary that contains the most important information Ghost learned or must know for the future. Be specific yet concise", 
+      { model: "exp/llama-v3-70b-instruct" }
     );
 
     log("Chatlog summarized: ", summmedChat)

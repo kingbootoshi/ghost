@@ -16,8 +16,6 @@ const internalMonologue = createCognitiveStep((instructions: string | { instruct
         role: ChatMessageRoleEnum.System,
         name: name,
         content: indentNicely`
-          Model the mind of ${name}.
-
           ## Description
           ${instructionString}
 
@@ -35,7 +33,7 @@ const internalMonologue = createCognitiveStep((instructions: string | { instruct
       const stripped = stripEntityAndVerb(memory.soulName, verb, response);
       const newMemory = {
         role: ChatMessageRoleEnum.Assistant,
-        content: `${memory.soulName} ${verb}: "${stripped}"`
+        content: `# ${memory.soulName.toUpperCase()} ${verb.toUpperCase()}: "${stripped}"`
       };
       return [newMemory, stripped];
     }

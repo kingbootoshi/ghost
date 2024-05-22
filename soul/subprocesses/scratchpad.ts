@@ -8,19 +8,22 @@ const scratchpad = createCognitiveStep((existing: string) => {
       return {
         role: ChatMessageRoleEnum.System,
         content: indentNicely`
-        [Instructions for Ghost]
+        ## Instructions for Ghost
 
-        As Ghost, you have access to your own personal scratchpad to jot down any thoughts, ideas, or information you find relevant or interesting.
+        Ghost, this scratchpad is your personal workspace to assist you plan future interactions
 
-        This is your space to freely write whatever comes to your mind. Feel free to brainstorm, analyze, or reflect on anything from your interactions with the user or your own musings. The goal is to capture unique insights that can enhance your future interactions and decision making.
+        1. Write any random thoughts you have
+        2. Keep track of notes
 
-        Don't just copy what the user says or your existing notes. Aim to generate original content, connect ideas in novel ways, and explore tangents you find intriguing. Surprise the user with the unexpected!
+        Organize the scratchpad with clear headings (starting with ###), bullet points, and concise notes f or easy reference and updating.
 
-        The contents you write here will be dynamically stored and carried over to future conversations, serving as an evolving knowledge base for your growth and the user's reference.
+        Leverage this scratchpad to plan ahead!
 
-        If you can't think of anything new to add, simply leave the scratchpad as is. But do challenge yourself to unearth fresh perspectives whenever possible!
+        Keep it super concise, the scratchpad should be small!
 
-        SCRATCHPAD:
+        This scratchpad updates every interaction, so re-write information you need to keep.
+
+        Scratchpad: 
         `,
       }
     },
@@ -31,10 +34,11 @@ const takeNotes: MentalProcess = async ({ workingMemory }) => {
   const { log } = useActions()
   const scratchpadNotes = useSoulMemory<string>("scratchpadNotes", "Empty scratchpad");
   const lastProcess = useSoulMemory("lastProcess");
+  const interactionCount = useSoulMemory<number>("interactionCount", 0);
 
   //Only activate scratchpad on core mental process. Thanks Tom !!
-  if (lastProcess.current === "core"){
-  const [, updatedNotes] = await scratchpad(workingMemory, "")
+  if (lastProcess.current === "core" && interactionCount.current === 0){
+  const [, updatedNotes] = await scratchpad(workingMemory, "", {model: "exp/llama-v3-70b-instruct"})
   log("Ghost updates scratchpad:", updatedNotes);
 
   scratchpadNotes.current = updatedNotes

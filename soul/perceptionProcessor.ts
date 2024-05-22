@@ -1,20 +1,38 @@
-import { PerceptionProcessor, useActions, useSoulMemory } from "@opensouls/engine"
+import { ChatMessageRoleEnum, InputMemory, Memory, PerceptionProcessor, useActions, useSoulMemory } from "@opensouls/engine"
  
-//THIS ENTIRE PERCEPTION PROCESSOR DOES NOT ADD NEW PERCEPTIONS TO THE MEMORY BUT RATHER UPDATES A SOUL MEMORY WITH THE PERCEPTION FOR EASE OF MANIPULATION
-//Usually a new perception is added to working memory, but this is easier for memory manipulation (for me imo)
-//Needs to have an if statement that checks specifically if a user sent in a perception so its not mixed in with tool perceptions.
+function safeName(name?: string) {
+  return (name || "").replace(/[^a-zA-Z0-9_-{}]/g, '_').slice(0, 62);
+}
+ 
 
 const perceptionProcessor: PerceptionProcessor = async ({ perception, workingMemory, currentProcess }) => {
   const { log } = useActions()
   const userName = useSoulMemory("userName", "Bootoshi") //Replace with your own name
   const newUserAction = useSoulMemory<string>("newUserAction", "..."); 
+  const userSaid = useSoulMemory<string>("userSaid", "...");
   const name = userName.current ? userName.current : perception.name
  
-  if (perception.action === "said"){
-  let content = `${name} ${perception.action}: ${perception.content}`
-
-  newUserAction.current = content
+  let content = `# NEW PERCEPTION RECEIVED\n* ACTION: ${perception.action}\n* CONTENT: ${perception.content}`
+  const memory: InputMemory = {
+    role: perception.internal ? ChatMessageRoleEnum.Assistant : ChatMessageRoleEnum.User,
+    content,
+    ...(name ? { name: safeName(name) } : {}),
+    metadata: {
+      ...perception._metadata,
+      timestamp: perception._timestamp
+    }
   }
+
+  //if it's a said, we take this action (default is said) into account in the master template
+  if (perception.action === "said"){
+  content = `${name} ${perception.action}: ${perception.content}`
+  newUserAction.current = content
+  userSaid.current = perception.content
+  return [workingMemory, currentProcess]
+  }
+  
+  //otherwise just return
+  workingMemory = workingMemory.withMemory(memory)
  
   return [workingMemory, currentProcess]
 }
