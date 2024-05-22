@@ -7,12 +7,12 @@ function safeName(name?: string) {
 
 const perceptionProcessor: PerceptionProcessor = async ({ perception, workingMemory, currentProcess }) => {
   const { log } = useActions()
-  const userName = useSoulMemory("userName", "Bootoshi") //Replace with your own name
+  const userName = useSoulMemory("userName", "")
   const newUserAction = useSoulMemory<string>("newUserAction", "..."); 
   const userSaid = useSoulMemory<string>("userSaid", "...");
   const name = userName.current ? userName.current : perception.name
  
-  let content = `# NEW PERCEPTION RECEIVED\n* ACTION: ${perception.action}\n* CONTENT: ${perception.content}`
+  let content = `## NEW PERCEPTION RECEIVED\n* ACTION: ${perception.action}\n* CONTENT: ${perception.content}`
   const memory: InputMemory = {
     role: perception.internal ? ChatMessageRoleEnum.Assistant : ChatMessageRoleEnum.User,
     content,
@@ -23,8 +23,8 @@ const perceptionProcessor: PerceptionProcessor = async ({ perception, workingMem
     }
   }
 
-  //if it's a said, we take this action (default is said) into account in the master template
-  if (perception.action === "said"){
+  //if it's a said, we take this action (default is said) into account in the master template. Also taking introduction MP into account
+  if (perception.action === "said" && userName.current !== ""){
   content = `${name} ${perception.action}: ${perception.content}`
   newUserAction.current = content
   userSaid.current = perception.content

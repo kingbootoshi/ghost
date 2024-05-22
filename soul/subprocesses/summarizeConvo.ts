@@ -1,6 +1,7 @@
 
 import { ChatMessageRoleEnum, MentalProcess, WorkingMemory, createCognitiveStep, indentNicely, stripEntityAndVerb, stripEntityAndVerbFromStream, useActions, useProcessMemory, useSoulMemory, useProcessManager } from "@opensouls/engine";
 import internalMonologue from "../cognitiveSteps/internalMonologue.js";
+import { getCurrentTimeString } from "../lib/utils/time.js";
 
 const summarizeConvo: MentalProcess = async ({ workingMemory }) => {
   const { log } = useActions()
@@ -37,11 +38,14 @@ const summarizeConvo: MentalProcess = async ({ workingMemory }) => {
 
     log("Chatlog summarized: ", summmedChat)
 
+    //summedChat is a string of the summed chat. No formatting
+    
     // Save the summarized story to longtermHistory.current
-    longtermHistory.current.push(summmedChat);
-
+    const timestamp = getCurrentTimeString().split(', ')[1]; // Extracting the date and time part
+    longtermHistory.current.push(`${timestamp} - ${summmedChat}`);
+    
     // Empty the tempHistory object
-    shortTermChatLogs.current = []; 
+    shortTermChatLogs.current = [];
 
     return workingMemory;
   }

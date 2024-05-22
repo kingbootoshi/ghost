@@ -1,7 +1,7 @@
 import { MentalProcess, useActions, useProcessManager, useSoulMemory, indentNicely, usePerceptions, ChatMessageRoleEnum } from "@opensouls/engine";
 import decision from "../cognitiveSteps/decision.js";
 import { addCalendarTask, viewCalendar } from "../cognitiveSteps/calendar.js";
-import core from "../initialProcess.js";
+import core from "./core.js";
 
 const calendarTool: MentalProcess = async ({ workingMemory }) => {
   const { speak, log, dispatch } = useActions();

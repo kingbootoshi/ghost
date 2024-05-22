@@ -1,5 +1,5 @@
 import { createCognitiveStep, WorkingMemory, ChatMessageRoleEnum, indentNicely, z, useSoulMemory, useActions} from "@opensouls/engine";
-import core from "../initialProcess.js";
+import core from "../mentalProcesses/core.js";
 
 export interface CalendarEvent {
   title: string;

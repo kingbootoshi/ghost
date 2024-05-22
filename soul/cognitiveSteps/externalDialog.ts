@@ -17,6 +17,8 @@ const externalDialog = createCognitiveStep((instructions: string | { instruction
         content: indentNicely`
             # GHOST DIRECTIVE
             ${instructionString}
+
+            Ghost said:
           `
       };
     },
