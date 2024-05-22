@@ -21,7 +21,7 @@ const characterCreation: MentalProcess = async ({ workingMemory }) => {
   
     const [withIntro, intro] = await externalDialog(
       workingMemory,
-      `You are initiating a connection with a new user. Introduce yourself! Explain all your tools and capabilities!`,
+      `[SYSTEM INSTRUCTIONS]: You are initiating a connection with a new user. Introduce yourself and explain your tools and capabilities, but do not offer to assist them yet. Focus on providing a clear and engaging introduction that highlights your unique features and skills.`,
       { model: "gpt-4o" }
     );
   
@@ -29,7 +29,7 @@ const characterCreation: MentalProcess = async ({ workingMemory }) => {
 
     const [withName, askName] = await externalDialog(
       withIntro,
-      `You just introduced yourself to the user. Now ask the user for their name so you can save it to your database. Tell them to choose wisely because I was too lazy to add functions to change it!`,
+      `[SYSTEM INSTRUCTIONS]: ASK THE USER FOR THEIR NAME, starting with "btw...". Mention they should choose wisely as there's no way to change it later because bootoshi was lazy.`,
       { model: "gpt-4o" }
     );
 

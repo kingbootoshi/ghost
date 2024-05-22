@@ -18,6 +18,7 @@ const externalDialog = createCognitiveStep((instructions: string | { instruction
             # GHOST DIRECTIVE
             ${instructionString}
 
+            Please respond with the NEW sentence Ghost wants to say
             Ghost said:
           `
       };
@@ -27,7 +28,7 @@ const externalDialog = createCognitiveStep((instructions: string | { instruction
       const stripped = stripEntityAndVerb(memory.soulName, verb, response);
       const newMemory = {
         role: ChatMessageRoleEnum.Assistant,
-        content: `# ${memory.soulName.toUpperCase()} ${verb.toUpperCase()}: "${stripped}"`
+        content: `${memory.soulName} ${verb}: "${stripped}"`
       };
       return [newMemory, stripped];
     }
