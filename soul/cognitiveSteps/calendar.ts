@@ -39,33 +39,18 @@ export class Calendar {
   }
 }
 
-const getCurrentTimeString = (): string => {
-  const now = new Date();
-  const options: Intl.DateTimeFormatOptions = {
-    timeZone: 'America/Los_Angeles',
-    month: '2-digit',
-    day: '2-digit',
-    year: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    weekday: 'long' // Added to include the name of the day
-  };
-  return now.toLocaleString('en-US', options);
-};
-
-const currentTimeString = getCurrentTimeString();
-
-function scheduleReengagement(description: string, startDate: string, startTime: string) {
+function scheduleReengagement(description: string, startDate: string, startTime: string, userTimezone: 'PT' | 'CT' | 'ET' | 'UTC') {
   const { scheduleEvent } = useActions();
 
-  const reminderTime = getReminderTime(startDate, startTime);
+  const reminderTime = getReminderTime(startDate, startTime, userTimezone);
 
   scheduleEvent({
     when: reminderTime,
     perception: { action: "remind", content: description },
     process: core,
   });
+
+  const timeZoneString = getTimeZoneString(userTimezone);
 
   return reminderTime.toLocaleString('en-US', {
     year: 'numeric',
@@ -75,24 +60,55 @@ function scheduleReengagement(description: string, startDate: string, startTime:
     minute: '2-digit',
     second: '2-digit',
     hour12: true,
-    timeZone: 'America/Los_Angeles'
+    timeZone: timeZoneString
   });
 }
 
-function getReminderTime(startDate: string, startTime: string): Date {
+function getReminderTime(startDate: string, startTime: string, userTimezone: 'PT' | 'CT' | 'ET' | 'UTC'): Date {
   const [year, month, day] = startDate.split('-').map(Number);
   const [hours, minutes, seconds] = startTime.split(':').map(Number);
 
-  // Create a Date object in PST
-  const eventDatePST = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-  
-  // Convert PST to UTC by adding 8 hours (PST is UTC-8)
-  const eventDateUTC = new Date(eventDatePST.getTime() + 8 * 60 * 60 * 1000);
+  // Create a Date object in UTC
+  const eventDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
 
-  // Subtract 30 minutes from the UTC time so we get reminded 30 minutes prior to the event (do not ask me why it has to be 90 idk it just works)
+  let offsetHours: number;
+  switch (userTimezone) {
+    case 'PT':
+      offsetHours = -8;
+      break;
+    case 'CT':
+      offsetHours = -6;
+      break;
+    case 'ET':
+      offsetHours = -5;
+      break;
+    case 'UTC':
+    default:
+      offsetHours = 0;
+      break;
+  }
+
+  // Adjust the event date to the user's timezone by subtracting the offset
+  const eventDateUTC = new Date(eventDate.getTime() - offsetHours * 60 * 60 * 1000);
+
+  // Subtract 30 minutes from the UTC time so we get reminded 30 minutes prior to the event
   eventDateUTC.setMinutes(eventDateUTC.getMinutes() - 90);
 
   return eventDateUTC;
+}
+
+function getTimeZoneString(userTimezone: 'PT' | 'CT' | 'ET' | 'UTC'): string {
+  switch (userTimezone) {
+    case 'PT':
+      return 'America/Los_Angeles';
+    case 'CT':
+      return 'America/Chicago';
+    case 'ET':
+      return 'America/New_York';
+    case 'UTC':
+    default:
+      return 'UTC';
+  }
 }
 
 const addCalendarTask = createCognitiveStep((instructions: string) => {
@@ -124,15 +140,13 @@ const addCalendarTask = createCognitiveStep((instructions: string) => {
           6. The end time of the event.
 
           Reply with the title, description, start date, start time, end date, and end time for the new calendar event.
-
-          CURRENT TIME IN 24 HRS: ${currentTimeString}
         `
       };
     },
     schema: params,
     postProcess: async (memory: WorkingMemory, response: z.output<typeof params>) => {
-      //ADD AUTOMATIC SCHEDULE TO REMIND TASK HERE
       const { log  } = useActions()
+      const userTimezone = useSoulMemory<"PT" | "CT" | "ET" | "UTC">("userTimezone", "PT");
       const calendarEvents = useSoulMemory<CalendarEvent[]>("calendarEvents", []);
       const calendar = new Calendar();
       calendarEvents.current.forEach(event => calendar.addEvent(event));
@@ -170,7 +184,7 @@ const addCalendarTask = createCognitiveStep((instructions: string) => {
 
       // Schedule re-engagement 30 minutes before the event
       const reminderDescription = `Reminder: ${title} - ${description} starts soon at ${startTime12Hour} !`;
-      const time = scheduleReengagement(reminderDescription, startDate, startTime);
+      const time = scheduleReengagement(reminderDescription, startDate, startTime, userTimezone.current);
       log(`Scheduled re-engagement for event: "${title}" at ${time}`);
       
       return [newMemory, successMessage];
@@ -199,8 +213,6 @@ const viewCalendar = createCognitiveStep((instructions: string) => {
           2. The end date of the range.
 
           Reply with the start date and end date for the range of calendar events you want to view.
-
-          CURRENT TIME IN 24 HRS: ${currentTimeString}
         `
       };
     },

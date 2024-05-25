@@ -13,7 +13,7 @@ export const getCurrentTimeStringPST = (): string => {
     return now.toLocaleString('en-US', options);
   };
 
-  export const getCurrentTimeString = (timezone: 'PT' | 'CT' | 'ET' | 'UTC' = 'ET'): string => {
+  export const getCurrentTimeString = (timezone: 'PT' | 'CT' | 'ET' | 'UTC' = 'PT'): string => {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = {
         month: '2-digit',
@@ -21,7 +21,6 @@ export const getCurrentTimeStringPST = (): string => {
         year: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: true,
         weekday: 'long' // Added to include the name of the day
     };
 

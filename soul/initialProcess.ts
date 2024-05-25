@@ -8,9 +8,10 @@ const characterCreation: MentalProcess = async ({ workingMemory }) => {
   const { speak, log } = useActions()
   const { invocationCount } = useProcessManager()
   const userName = useSoulMemory("userName", "")
+  const userTimezone = useSoulMemory("userTimezone", "")
 
   // Check if userName is not empty
-  if (userName.current !== "") {
+  if (userName.current !== "" && userTimezone.current !== "") {
     log("Stored name found, skipping character creation and returning to core");
     return [workingMemory, core, { executeNow: true }];
   }
@@ -38,6 +39,7 @@ const characterCreation: MentalProcess = async ({ workingMemory }) => {
     return withName;
   }
 
+  if (userName.current == "") {
   const [findName, name] = await brainstorm(
     workingMemory,
     indentNicely`
@@ -74,11 +76,46 @@ const characterCreation: MentalProcess = async ({ workingMemory }) => {
 
   const [withRepeat, repeatName] = await externalDialog(
     pickName,
-    `Got name. User's name is ${finalName}. Switching to core mental process! Tell ${finalName} you're ready to assist them.`,
+    `Got name. User's name is ${finalName}. Ask the user to pick their timezone from the following options explicitly: PT/CT/ET`,
     { model: "gpt-4o" }
   );
 
   speak(repeatName)
+  return withRepeat
+  }
+
+  const [pickTimezone, timeZone] = await decision(
+    workingMemory,
+    {
+      description: "Pick & finalize the users timezone. ",
+      choices: ["PT", "CT", "ET", "no_timezone_mentioned"]
+    }, 
+    { model: "gpt-4o" }
+  )
+
+  log("User picked timezone", timeZone)
+
+  if(timeZone === "no_timezone_mentioned"){
+    const [withRepeatTimezone, repeatTimezone] = await externalDialog(
+      workingMemory,
+      `The User DID NOT give you a timezone that fit PT/CT/ET. Ask for their timezone again! We need a timezone before continuing. Tell them to PICK: PT/CT/ET`,
+      { model: "gpt-4o" }
+    );
+
+    speak(repeatTimezone)
+
+    return withRepeatTimezone
+  }
+
+  userTimezone.current = timeZone
+
+  const [withFinalize, finalize] = await externalDialog(
+    workingMemory,
+    `Got timezone. Tell the user you are ready to assist them!`,
+    { model: "gpt-4o" }
+  );
+
+  speak(finalize)
 
   return [workingMemory, core]
 };

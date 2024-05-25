@@ -31,7 +31,7 @@ const core: MentalProcess = async ({ workingMemory }) => {
   const dailyRemindersScheduled = useSoulMemory<boolean>("dailyRemindersScheduled", false);
   // Schedule daily re-engagements if not already scheduled
   if (!dailyRemindersScheduled.current) {
-    const scheduledTimes = scheduleDailyReengagements();
+    const scheduledTimes = scheduleDailyReengagements(userTimezone.current as 'PT' | 'CT' | 'ET');
     log('Morning reminder scheduled at:', scheduledTimes.morning);
     log('Evening reminder scheduled at:', scheduledTimes.evening);
     dailyRemindersScheduled.current = true;
@@ -171,7 +171,7 @@ const core: MentalProcess = async ({ workingMemory }) => {
   speak(result);
 
   //PUSH CONVO TO SHORT TERM HISTORY
-  const [day, date, time] = getCurrentTimeString().split(', '); // Extracting the date and time parts
+  const [day, date, time] = currentTimeString.split(', '); // Extracting the date and time parts
   shortTermChatLogs.current.push(`${date} ${time} ${userTimezone.current}\nUser said: ${userSaid.current}\nGhost said: ${result}`);
 
   return withDialog;
@@ -189,7 +189,7 @@ if(invokingPerception?.action === "remind"){
   speak(result)
 
   //PUSH CONVO TO SHORT TERM HISTORY
-  const [day, date, time] = getCurrentTimeString().split(', '); // Extracting the date and time parts
+  const [day, date, time] = currentTimeString.split(', '); // Extracting the date and time parts
   shortTermChatLogs.current.push(`${date} ${time} ${userTimezone.current}\nUser said: [ N/A ]\nGHOST SAID: ${result}`);
 
   return workingMemory
@@ -215,7 +215,7 @@ if(invokingPerception?.action === "remind"){
     speak(result)
 
     //PUSH CONVO TO SHORT TERM HISTORY
-    const [day, date, time] = getCurrentTimeString().split(', '); // Extracting the date and time parts
+    const [day, date, time] = currentTimeString.split(', '); // Extracting the date and time parts
     shortTermChatLogs.current.push(`${date} ${time} ${userTimezone.current}\nUser said: [ N/A ]\nGHOST SAID: ${result}`);
 
     return workingMemory
@@ -240,7 +240,7 @@ if(invokingPerception?.action === "remind"){
     speak(result)
 
     //PUSH CONVO TO SHORT TERM HISTORY
-    const [day, date, time] = getCurrentTimeString().split(', '); // Extracting the date and time parts
+    const [day, date, time] = currentTimeString.split(', '); // Extracting the date and time parts
     shortTermChatLogs.current.push(`${date} ${time} ${userTimezone.current}\nUser said: [ N/A ]\nGHOST SAID: ${result}`);
 
     dailyRemindersScheduled.current = false;

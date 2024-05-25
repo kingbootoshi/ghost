@@ -8,6 +8,7 @@ function safeName(name?: string) {
 const perceptionProcessor: PerceptionProcessor = async ({ perception, workingMemory, currentProcess }) => {
   const { log } = useActions()
   const userName = useSoulMemory("userName", "")
+  const userTimezone = useSoulMemory("userTimezone", "")
   const newUserAction = useSoulMemory<string>("newUserAction", "..."); 
   const userSaid = useSoulMemory<string>("userSaid", "...");
   const name = userName.current ? userName.current : perception.name
@@ -24,7 +25,7 @@ const perceptionProcessor: PerceptionProcessor = async ({ perception, workingMem
   }
 
   //if it's a said, we take this action (default is said) into account in the master template. Also taking introduction MP into account
-  if (perception.action === "said" && userName.current !== ""){
+  if (perception.action === "said" && userName.current !== "" && userTimezone.current !== ""){
   content = `${name} ${perception.action}: ${perception.content}`
   newUserAction.current = content
   userSaid.current = perception.content
