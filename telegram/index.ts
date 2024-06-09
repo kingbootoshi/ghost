@@ -25,7 +25,7 @@ async function setupTelegramSoulBridge(telegram: Telegraf<Context>, telegramChat
   }
 
   const soul = new Soul({
-    soulId: `BOO-${String(telegramChatId)}`,
+    soulId: `${process.env.SOUL_ID!}-${String(telegramChatId)}`,
     organization: process.env.OPEN_SOULS_ORGANIZATION!,
     blueprint: process.env.SOUL_ENGINE_BLUEPRINT!,
   });
