@@ -48,7 +48,7 @@ async function setupTelegramSoulBridge(telegram: Telegraf<Context>, telegramChat
 }
 
 async function connectToSoulEngine(telegram: Telegraf<Context>) {
-  const authorizedUserIds: number[] = [1037589495];
+  const authorizedUserIds: number[] = process.env.AUTHORIZED_USER_IDS!.split(',').map(id => parseInt(id, 10));
 
   for (const userId of authorizedUserIds) {
     const telegramChatId = userId;
